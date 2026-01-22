@@ -130,17 +130,19 @@ def initialize(request, wordlist, single_url=False):
     else:
         fuzz = "z" + random_str(6)
         response_1 = requester(request, {fuzz[:-1]: fuzz[::-1][:-1]})
-        if(isinstance(response_1, str)):
+        if (hasattr(response_1,'status_code')):
+            if(isinstance(response_1, str)):
+                return 'skipped'
+            mem.var['healthy_url'] = response_1.status_code not in (400, 413, 418, 429, 503)
+            if not mem.var['healthy_url']:
+                print('%s Target returned HTTP an error, this may cause problems.' % (bad))
+            if single_url:
+                print('%s Analysing HTTP response for anomalies' % run)
+            response_2 = requester(request, {fuzz[:-1]: fuzz[::-1][:-1]})
+            if type(response_1) == str or type(response_2) == str:
+                return 'skipped'
+        else:
             return 'skipped'
-        mem.var['healthy_url'] = response_1.status_code not in (400, 413, 418, 429, 503)
-        if not mem.var['healthy_url']:
-            print('%s Target returned HTTP %i, this may cause problems.' % (bad, response_1.status_code))
-        if single_url:
-            print('%s Analysing HTTP response for anomalies' % run)
-        response_2 = requester(request, {fuzz[:-1]: fuzz[::-1][:-1]})
-        if type(response_1) == str or type(response_2) == str:
-            return 'skipped'
-
         # params from response must be extracted before factors but displayed later
         found, words_exist = heuristic(response_1, wordlist)
 
